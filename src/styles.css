@@ -64,6 +64,7 @@ main.container.resizing {
     background: transparent;
     border: none;
     cursor: pointer;
+    font-size: 0.75rem;
 }
 
 .sidebar {
