@@ -1,0 +1,89 @@
+@import 'highlight.js/styles/default.css';
+
+/* Gruvbox color variables - will be set by theme.ts */
+:root {
+    --bg: #282828;
+    --fg: #ebdbb2;
+    --color0: #282828;
+    --color8: #928374;
+    --color1: #cc241d;
+    --color9: #fb4934;
+    --color2: #98971a;
+    --color10: #b8bb26;
+    --color3: #d79921;
+    --color11: #fabd2f;
+    --color4: #458588;
+    --color12: #83a598;
+    --color5: #b16286;
+    --color13: #d3869b;
+    --color6: #689d6a;
+    --color14: #8ec07c;
+    --color7: #a89984;
+    --color15: #ebdbb2;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--fg);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Main content area with sidebar */
+main.container {
+    display: flex;
+    flex-direction: column;
+    --sidebar-width: 30%;
+    height: 100vh;
+}
+
+main.container.resizing {
+    user-select: none;
+    cursor: col-resize;
+}
+
+.main-content {
+    display: flex;
+    flex: 1;
+}
+
+/* Header styles */
+.header {
+    display: flex;
+    padding: 0.25rem 0.5rem;
+    justify-content: flex-end;
+    align-items: center;
+    border-bottom: 0.25px solid var(--color8);
+}
+
+.theme-toggle {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.sidebar {
+    overflow-y: auto;
+    width: var(--sidebar-width);
+}
+
+.resize-handle {
+    width: 1px;
+    background-color: var(--color8);
+    opacity: 0.25;
+    cursor: col-resize;
+}
+
+.content {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+/* Markdown content styles */
+.content {
+    color: var(--fg);
+}
