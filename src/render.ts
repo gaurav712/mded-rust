@@ -11,7 +11,75 @@ const md = new MiniGFM({
 });
 
 // Parse Markdown
-const sampleMarkdown = '# Hello World';
+const sampleMarkdown = `
+# Hello World
+
+Welcome to **MiniGFM** demo!
+
+---
+
+## Features Showcase
+
+### 1. Lists
+
+- Unordered item 1
+- Unordered item 2  
+  - Nested item A
+  - Nested item B
+
+1. Ordered list item one
+2. Ordered list item two
+    1. Nested ordered sub-item
+
+### 2. Task List
+
+- [x] Completed task
+- [ ] Incomplete task
+
+### 3. Table
+
+| Syntax   | Description        | Example     |
+|----------|-------------------|-------------|
+| Header 1 | Header 2          | Header 3    |
+| Cell 1   | _Italic_          | \`inline\`  |
+| Cell 2   | **Bold**          | [Link](#)   |
+
+### 4. Code
+
+Inline code: \`console.log('Hello!');\`
+
+\`\`\`js
+// JavaScript example
+function greet(name) {
+    console.log('Hello, ' + name + '!');
+}
+greet('World');
+\`\`\`
+
+### 5. Blockquotes
+
+> "This is a blockquote.  
+> It can span multiple lines."
+
+### 6. Strikethrough
+
+~~This text is struck through~~
+
+### 7. Images
+
+![MiniGFM Logo](https://placehold.co/32x32 "Logo")
+
+### 8. Link
+
+[Visit MiniGFM](https://github.com/oblivionocean/minigfm)
+
+### 9. Horizontal Rule
+
+---
+
+`;
+
+
 const html = md.parse(sampleMarkdown);
 
 window.addEventListener('DOMContentLoaded', () => {
