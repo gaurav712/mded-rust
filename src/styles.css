@@ -49,6 +49,7 @@ main.container.resizing {
 .main-content {
     display: flex;
     flex: 1;
+    overflow: hidden;
 }
 
 /* Header styles */
@@ -80,11 +81,8 @@ main.container.resizing {
 }
 
 .content {
+    flex: 1;
     padding: 1.5rem;
     overflow-y: auto;
-}
-
-/* Markdown content styles */
-.content {
     color: var(--fg);
 }
