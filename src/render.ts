@@ -1,26 +1,21 @@
-import { MiniGFM } from '@oblivionocean/minigfm';
-import hljs from 'highlight.js';
+import { invoke } from '@tauri-apps/api/core';
 import { initTheme } from './theme';
 import { initHeader } from './header';
 import { initSidebar, initResizeHandle } from './sidebar';
 
-// Create configured instance
-const md = new MiniGFM({
-    unsafe: true, // Allow raw HTML rendering
-    hljs: hljs,   // Use highlight.js for code blocks
-});
-
 // Parse Markdown
 const sampleMarkdown = `
 # Hello World
-Welcome to **MiniGFM** demo!
+Welcome to **Rust Markdown Parser** demo!
 ---
 ## Features Showcase
 ### 1. Lists
 - Unordered item 1
 - Unordered item 2  
   - Nested item A
+    - Nested item A1
   - Nested item B
+    1. Hello
 1. Ordered list item one
 2. Ordered list item two
     1. Nested ordered sub-item
@@ -46,6 +41,8 @@ greet('World');
 ### 5. Blockquotes
 
 > "This is a blockquote.  
+---
+> "This is a blockquote.  
 > It can span multiple lines."
 
 ### 6. Strikethrough
@@ -54,11 +51,11 @@ greet('World');
 
 ### 7. Images
 
-![MiniGFM Logo](https://placehold.co/32x32 "Logo")
+![Logo](https://placehold.co/32x32 "Logo")
 
 ### 8. Link
 
-[Visit MiniGFM](https://github.com/oblivionocean/minigfm)
+[Visit GitHub](https://github.com)
 
 ### 9. Horizontal Rule
 
@@ -67,15 +64,22 @@ greet('World');
 `;
 
 
-const html = md.parse(sampleMarkdown);
-
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     
     const container = document.querySelector('main.container');
     if (!container) return;
     
     container.appendChild(initHeader());
+    
+    // Parse markdown using Rust backend
+    let html: string;
+    try {
+        html = await invoke<string>('parse_markdown', { markdown: sampleMarkdown });
+    } catch (error) {
+        console.error('Failed to parse markdown:', error);
+        html = '<p>Error parsing markdown. Please check the console.</p>';
+    }
     
     const mainContent = document.createElement('div');
     mainContent.className = 'main-content';
