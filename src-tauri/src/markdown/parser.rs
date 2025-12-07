@@ -9,6 +9,35 @@ pub struct ParsedChunk {
     pub index: usize,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ListType {
+    Unordered,
+    Ordered,
+}
+
+impl ListType {
+    fn as_str(self) -> &'static str {
+        match self {
+            ListType::Unordered => "ul",
+            ListType::Ordered => "ol",
+        }
+    }
+    
+    fn open_tag(self, class: Option<&str>) -> String {
+        match class {
+            Some(c) => format!("<{} class=\"{}\">", self.as_str(), c),
+            None => format!("<{}>", self.as_str()),
+        }
+    }
+    
+    fn close_tag(self) -> &'static str {
+        match self {
+            ListType::Unordered => "</ul>",
+            ListType::Ordered => "</ol>",
+        }
+    }
+}
+
 /// Regex patterns for markdown parsing
 static HEADING_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^(#{1,6})\s+(.+)$").expect("Failed to compile heading regex")
@@ -35,8 +64,6 @@ static LINK_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static IMAGE_REGEX: Lazy<Regex> = Lazy::new(|| {
-    // Match: ![alt](url "title") or ![alt](url)
-    // Use raw string with # delimiters to handle quotes
     Regex::new(r#"!\[([^\]]*)\]\(([^)]+?)(?:\s+["']([^"']*)["'])?\)"#).expect("Failed to compile image regex")
 });
 
@@ -69,31 +96,26 @@ fn parse_inline(text: &str) -> String {
     let mut result = text.to_string();
     
     // Process in order: code (to avoid processing inside code), strikethrough, bold, italic, links, images
-    // Code blocks are handled separately, so we process inline code first
     result = INLINE_CODE_REGEX.replace_all(&result, |caps: &regex::Captures| {
         let code = caps.get(1).map(|m| m.as_str()).unwrap_or("");
         format!("<code>{}</code>", escape_html(code))
     }).to_string();
     
-    // Strikethrough
     result = STRIKETHROUGH_REGEX.replace_all(&result, |caps: &regex::Captures| {
         let text = caps.get(1).map(|m| m.as_str()).unwrap_or("");
         format!("<del>{}</del>", parse_inline_simple(text))
     }).to_string();
     
-    // Bold
     result = BOLD_REGEX.replace_all(&result, |caps: &regex::Captures| {
         let text = caps.get(1).map(|m| m.as_str()).unwrap_or("");
         format!("<strong>{}</strong>", parse_inline_simple(text))
     }).to_string();
     
-    // Italic
     result = ITALIC_REGEX.replace_all(&result, |caps: &regex::Captures| {
         let text = caps.get(1).map(|m| m.as_str()).unwrap_or("");
         format!("<em>{}</em>", escape_html(text))
     }).to_string();
     
-    // Images
     result = IMAGE_REGEX.replace_all(&result, |caps: &regex::Captures| {
         let alt = caps.get(1).map(|m| m.as_str()).unwrap_or("");
         let url = caps.get(2).map(|m| m.as_str()).unwrap_or("");
@@ -105,7 +127,6 @@ fn parse_inline(text: &str) -> String {
         }
     }).to_string();
     
-    // Links
     result = LINK_REGEX.replace_all(&result, |caps: &regex::Captures| {
         let text = caps.get(1).map(|m| m.as_str()).unwrap_or("");
         let url = caps.get(2).map(|m| m.as_str()).unwrap_or("");
@@ -189,31 +210,32 @@ fn get_indent_level(line: &str) -> usize {
         .sum()
 }
 
-/// Check if a line is a list item and return its type and content
-fn parse_list_item(line: &str) -> Option<(bool, bool, &str)> {
+/// Check if a line is a list item
+fn is_list_item(line: &str) -> bool {
     let trimmed = line.trim_start();
     
-    // Check for task list
-    if let Some(caps) = TASK_LIST_REGEX.captures(line) {
-        let text = caps.get(3).map(|m| m.as_str()).unwrap_or("");
-        return Some((true, true, text)); // (is_list, is_task, text)
+    if TASK_LIST_REGEX.is_match(line) {
+        return true;
     }
     
-    // Check for unordered list
     if trimmed.starts_with("- ") || trimmed.starts_with("* ") {
-        let text = &trimmed[2..];
-        return Some((true, false, text));
+        return true;
     }
     
-    // Check for ordered list
     if let Some(num_end) = trimmed.find(". ") {
         if trimmed[..num_end].chars().all(|c| c.is_ascii_digit()) {
-            let text = &trimmed[num_end + 2..];
-            return Some((true, false, text));
+            return true;
         }
     }
     
-    None
+    false
+}
+
+/// Helper to close current list
+fn close_list(html: &mut String, in_list: bool, list_type: ListType) {
+    if in_list {
+        html.push_str(list_type.close_tag());
+    }
 }
 
 /// Parse a list (ordered or unordered) with nested list support
@@ -221,7 +243,7 @@ fn parse_list(lines: &[&str], start: usize, base_indent: usize) -> (String, usiz
     let mut html = String::new();
     let mut i = start;
     let mut in_list = false;
-    let mut list_type = "";
+    let mut list_type = ListType::Unordered;
     let mut current_item_html = String::new();
     
     while i < lines.len() {
@@ -229,30 +251,23 @@ fn parse_list(lines: &[&str], start: usize, base_indent: usize) -> (String, usiz
         let trimmed = line.trim();
         
         if trimmed.is_empty() {
-            // Close current list item if we have nested content
             if !current_item_html.is_empty() {
                 html.push_str(&current_item_html);
                 current_item_html.clear();
             }
-            if in_list {
-                html.push_str(if list_type == "ul" { "</ul>" } else { "</ol>" });
-                in_list = false;
-                list_type = "";
-            }
+            close_list(&mut html, in_list, list_type);
+            in_list = false;
             i += 1;
             continue;
         }
         
         let indent = get_indent_level(line);
         
-        // If indentation decreased, we're done with this list level
         if indent < base_indent {
             break;
         }
         
-        // If this is a list item at the current level
         if indent == base_indent {
-            // Close previous list item if we have nested content
             if !current_item_html.is_empty() {
                 html.push_str(&current_item_html);
                 current_item_html.clear();
@@ -263,18 +278,16 @@ fn parse_list(lines: &[&str], start: usize, base_indent: usize) -> (String, usiz
                 let checked = caps.get(2).map(|m| m.as_str() == "x").unwrap_or(false);
                 let text = caps.get(3).map(|m| m.as_str()).unwrap_or("");
                 
-                if !in_list || list_type != "ul" {
-                    if in_list {
-                        html.push_str(if list_type == "ul" { "</ul>" } else { "</ol>" });
-                    }
-                    html.push_str("<ul class=\"contains-task-list\">");
+                if !in_list || list_type != ListType::Unordered {
+                    close_list(&mut html, in_list, list_type);
+                    html.push_str(&ListType::Unordered.open_tag(Some("contains-task-list")));
                     in_list = true;
-                    list_type = "ul";
+                    list_type = ListType::Unordered;
                 }
                 
                 let checked_attr = if checked { " checked" } else { "" };
                 current_item_html = format!(
-                    "<li class=\"task-list-item\"><input type=\"checkbox\" class=\"task-list-item-checkbox\"{} disabled> {}",
+                    "<li class=\"task-list-item\"><input type=\"checkbox\" class=\"task-list-item-checkbox\"{} disabled> {}</li>",
                     checked_attr,
                     parse_inline(text)
                 );
@@ -284,13 +297,11 @@ fn parse_list(lines: &[&str], start: usize, base_indent: usize) -> (String, usiz
             
             // Check for unordered list
             if trimmed.starts_with("- ") || trimmed.starts_with("* ") {
-                if !in_list || list_type != "ul" {
-                    if in_list {
-                        html.push_str(if list_type == "ul" { "</ul>" } else { "</ol>" });
-                    }
-                    html.push_str("<ul>");
+                if !in_list || list_type != ListType::Unordered {
+                    close_list(&mut html, in_list, list_type);
+                    html.push_str(&ListType::Unordered.open_tag(None));
                     in_list = true;
-                    list_type = "ul";
+                    list_type = ListType::Unordered;
                 }
                 let text = &trimmed[2..];
                 current_item_html = format!("<li>{}", parse_inline(text));
@@ -301,13 +312,11 @@ fn parse_list(lines: &[&str], start: usize, base_indent: usize) -> (String, usiz
             // Check for ordered list
             if let Some(num_end) = trimmed.find(". ") {
                 if trimmed[..num_end].chars().all(|c| c.is_ascii_digit()) {
-                    if !in_list || list_type != "ol" {
-                        if in_list {
-                            html.push_str(if list_type == "ul" { "</ul>" } else { "</ol>" });
-                        }
-                        html.push_str("<ol>");
+                    if !in_list || list_type != ListType::Ordered {
+                        close_list(&mut html, in_list, list_type);
+                        html.push_str(&ListType::Ordered.open_tag(None));
                         in_list = true;
-                        list_type = "ol";
+                        list_type = ListType::Ordered;
                     }
                     let text = &trimmed[num_end + 2..];
                     current_item_html = format!("<li>{}", parse_inline(text));
@@ -316,16 +325,11 @@ fn parse_list(lines: &[&str], start: usize, base_indent: usize) -> (String, usiz
                 }
             }
             
-            // Not a list item, break
             break;
         } else if indent > base_indent {
-            // This is a nested list or continuation of current item
-            // Check if it's a nested list
             let trimmed_line = line.trim_start();
-            if let Some((_, _, _)) = parse_list_item(trimmed_line) {
-                // It's a nested list item - parse the nested list
+            if is_list_item(trimmed_line) {
                 if !current_item_html.is_empty() {
-                    // Parse nested list and add it to current item
                     let (nested_html, new_i) = parse_list(lines, i, indent);
                     current_item_html.push_str(&nested_html);
                     current_item_html.push_str("</li>");
@@ -334,17 +338,13 @@ fn parse_list(lines: &[&str], start: usize, base_indent: usize) -> (String, usiz
                     i = new_i;
                     continue;
                 } else {
-                    // No current item, but we have a nested list - this shouldn't happen normally
-                    // but handle it gracefully
                     let (nested_html, new_i) = parse_list(lines, i, indent);
                     html.push_str(&nested_html);
                     i = new_i;
                     continue;
                 }
             } else {
-                // Continuation of current item text (not a nested list)
                 if !current_item_html.is_empty() && !current_item_html.ends_with("</li>") {
-                    // Add as continuation text
                     let text = line.trim();
                     if !text.is_empty() {
                         current_item_html.push(' ');
@@ -354,12 +354,10 @@ fn parse_list(lines: &[&str], start: usize, base_indent: usize) -> (String, usiz
             }
             i += 1;
         } else {
-            // Indentation mismatch, break
             break;
         }
     }
     
-    // Close current item if open
     if !current_item_html.is_empty() {
         if !current_item_html.ends_with("</li>") {
             current_item_html.push_str("</li>");
@@ -367,10 +365,7 @@ fn parse_list(lines: &[&str], start: usize, base_indent: usize) -> (String, usiz
         html.push_str(&current_item_html);
     }
     
-    // Close list if open
-    if in_list {
-        html.push_str(if list_type == "ul" { "</ul>" } else { "</ol>" });
-    }
+    close_list(&mut html, in_list, list_type);
     
     (html, i)
 }
@@ -383,19 +378,19 @@ fn parse_blockquote(lines: &[&str], start: usize) -> (String, usize) {
     
     while i < lines.len() {
         let line = lines[i];
-        if line.trim_start().starts_with("> ") {
+        if let Some(pos) = line.find("> ") {
             if in_quote {
                 html.push_str("<br>");
             }
-            let text = &line[line.find("> ").unwrap_or(0) + 2..];
+            let text = &line[pos + 2..];
             html.push_str(&format!("<p>{}</p>", parse_inline(text)));
             in_quote = true;
             i += 1;
-        } else if line.trim_start().starts_with('>') {
+        } else if let Some(pos) = line.find('>') {
             if in_quote {
                 html.push_str("<br>");
             }
-            let text = &line[line.find('>').unwrap_or(0) + 1..].trim_start();
+            let text = line[pos + 1..].trim_start();
             if !text.is_empty() {
                 html.push_str(&format!("<p>{}</p>", parse_inline(text)));
             }
@@ -418,22 +413,19 @@ fn parse_code_block(lines: &[&str], start: usize) -> (String, usize) {
     let mut i = start;
     let first_line = lines[i].trim();
     
-    // Extract language if present
-    let lang = if first_line.starts_with("```") {
-        let lang_part = first_line.strip_prefix("```").unwrap_or("").trim();
-        if lang_part.is_empty() {
-            None
-        } else {
-            Some(lang_part)
-        }
-    } else {
-        None
-    };
+    let lang = first_line.strip_prefix("```")
+        .and_then(|s| {
+            let trimmed = s.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed)
+            }
+        });
     
     i += 1;
     let mut code_lines = Vec::new();
     
-    // Collect code lines until closing ```
     while i < lines.len() {
         let line = lines[i];
         if line.trim() == "```" {
@@ -465,7 +457,6 @@ pub fn parse_chunk(chunk: Chunk) -> ParsedChunk {
             continue;
         }
         
-        // Check for code block
         if line.starts_with("```") {
             let (code_html, new_i) = parse_code_block(&lines, i);
             html.push_str(&code_html);
@@ -473,14 +464,12 @@ pub fn parse_chunk(chunk: Chunk) -> ParsedChunk {
             continue;
         }
         
-        // Check for horizontal rule
         if HORIZONTAL_RULE_REGEX.is_match(line) {
             html.push_str("<hr>");
             i += 1;
             continue;
         }
         
-        // Check for heading
         if let Some(caps) = HEADING_REGEX.captures(line) {
             let level = caps.get(1).map(|m| m.as_str().len()).unwrap_or(1);
             let text = caps.get(2).map(|m| m.as_str()).unwrap_or("");
@@ -489,7 +478,6 @@ pub fn parse_chunk(chunk: Chunk) -> ParsedChunk {
             continue;
         }
         
-        // Check for table
         if line.contains('|') && i + 1 < lines.len() && lines[i + 1].trim().contains("---") {
             let (table_html, new_i) = parse_table(&lines, i);
             html.push_str(&table_html);
@@ -497,7 +485,6 @@ pub fn parse_chunk(chunk: Chunk) -> ParsedChunk {
             continue;
         }
         
-        // Check for blockquote
         if line.starts_with('>') {
             let (quote_html, new_i) = parse_blockquote(&lines, i);
             html.push_str(&quote_html);
@@ -505,10 +492,7 @@ pub fn parse_chunk(chunk: Chunk) -> ParsedChunk {
             continue;
         }
         
-        // Check for list
-        if line.starts_with("- ") || line.starts_with("* ") || 
-           (line.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) && line.contains(". ")) ||
-           TASK_LIST_REGEX.is_match(line) {
+        if is_list_item(line) || TASK_LIST_REGEX.is_match(&lines[i]) {
             let base_indent = get_indent_level(&lines[i]);
             let (list_html, new_i) = parse_list(&lines, i, base_indent);
             html.push_str(&list_html);
@@ -526,9 +510,7 @@ pub fn parse_chunk(chunk: Chunk) -> ParsedChunk {
             if HEADING_REGEX.is_match(current_line) ||
                current_line.starts_with("```") ||
                current_line.starts_with('>') ||
-               current_line.starts_with("- ") ||
-               current_line.starts_with("* ") ||
-               (current_line.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) && current_line.contains(". ")) ||
+               is_list_item(current_line) ||
                HORIZONTAL_RULE_REGEX.is_match(current_line) ||
                (current_line.contains('|') && i + 1 < lines.len() && lines[i + 1].trim().contains("---")) {
                 break;

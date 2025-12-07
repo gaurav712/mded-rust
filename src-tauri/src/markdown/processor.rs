@@ -17,10 +17,9 @@ const DEFAULT_CHUNK_SIZE: usize = 500;
 pub fn process_markdown_parallel(markdown: &str, num_threads: Option<usize>) -> String {
     // Set thread pool size if specified
     if let Some(threads) = num_threads {
-        rayon::ThreadPoolBuilder::new()
+        let _ = rayon::ThreadPoolBuilder::new()
             .num_threads(threads)
-            .build_global()
-            .ok();
+            .build_global();
     }
 
     // Split markdown into chunks

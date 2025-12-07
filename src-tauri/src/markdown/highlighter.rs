@@ -1,5 +1,5 @@
 /// Apply syntax highlighting to all code blocks in HTML
-/// Since we're not using syntect, this just ensures code blocks are properly formatted
+/// Since we're not using syntect, this just returns the HTML as-is
 /// 
 /// # Arguments
 /// * `html` - HTML string containing code blocks
@@ -8,7 +8,6 @@
 /// HTML with properly formatted code blocks
 pub fn highlight_code_blocks(html: &str) -> String {
     // Code blocks are already properly formatted by the parser
-    // This function is kept for API compatibility
     html.to_string()
 }
 

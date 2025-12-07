@@ -14,17 +14,9 @@ pub struct Chunk {
 /// # Returns
 /// Vector of chunks with preserved order indices
 pub fn chunk_by_lines(markdown: &str, chunk_size: usize) -> Vec<Chunk> {
-    if markdown.is_empty() {
-        return vec![Chunk {
-            content: String::new(),
-            index: 0,
-        }];
-    }
-
     let lines: Vec<&str> = markdown.lines().collect();
-    let total_lines = lines.len();
     
-    if total_lines == 0 {
+    if lines.is_empty() {
         return vec![Chunk {
             content: String::new(),
             index: 0,
