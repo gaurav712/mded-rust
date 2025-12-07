@@ -85,4 +85,242 @@ main.container.resizing {
     padding: 1.5rem;
     overflow-y: auto;
     color: var(--fg);
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* ============================================
+   MiniGFM Markdown Element Styles
+   ============================================ */
+
+/* Reset any default MiniGFM styles */
+.content * {
+    box-sizing: border-box;
+}
+
+/* Headings */
+.content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.25rem 0;
+    color: var(--fg);
+}
+
+.content h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0.25rem 0;
+    color: var(--fg);
+}
+
+.content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0.25rem 0;
+    color: var(--fg);
+}
+
+.content h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0.25rem 0;
+    color: var(--fg);
+}
+
+.content h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0.25rem 0;
+    color: var(--fg);
+}
+
+.content h6 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0.25rem 0;
+    color: var(--color8);
+}
+
+/* Horizontal Rules */
+.content hr {
+    border: none;
+    border-top: 1px solid var(--color8);
+    opacity: 0.5;
+    margin: 0.5rem 0;
+}
+
+/* Task Lists */
+.content input[type="checkbox"] {
+    accent-color: var(--color4);
+}
+
+/* Tables */
+.content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: table;
+    overflow-x: auto;
+}
+
+.content table thead {
+    background-color: var(--color0);
+    border-bottom: 2px solid var(--color8);
+}
+
+.content table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--fg);
+    border-bottom: 1px solid var(--color8);
+}
+
+.content table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color8);
+    color: var(--fg);
+}
+
+.content table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.content table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Code Blocks */
+.content pre {
+    background-color: var(--color0);
+    border: 1px solid var(--color8);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    line-height: 1.5;
+}
+
+.content pre code {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    font-size: 0.875rem;
+    color: var(--fg);
+}
+
+/* Inline Code */
+.content code {
+    background-color: var(--color0);
+    border: 1px solid var(--color8);
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.375rem;
+    font-size: 0.875em;
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--color14);
+}
+
+.content p code,
+.content li code,
+.content td code,
+.content th code {
+    font-size: 0.9em;
+}
+
+/* Blockquotes */
+.content blockquote {
+    border-left: 4px solid var(--color4);
+    padding-left: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    margin-right: 0;
+    color: var(--color7);
+    font-style: italic;
+    background-color: rgba(69, 133, 136, 0.05);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    padding-right: 1rem;
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.content blockquote p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.content blockquote p:first-child {
+    margin-top: 0;
+}
+
+.content blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* Strikethrough */
+.content del,
+.content s {
+    text-decoration: line-through;
+    color: var(--color8);
+    opacity: 0.7;
+}
+
+/* Images */
+.content img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--color8);
+}
+
+.content p img {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Links */
+.content a {
+    color: var(--color12);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.content a:hover {
+    color: var(--color4);
+    border-bottom-color: var(--color4);
+}
+
+.content a:visited {
+    color: var(--color13);
+}
+
+.content a:visited:hover {
+    color: var(--color5);
+    border-bottom-color: var(--color5);
+}
+
+/* Emphasis */
+.content strong,
+.content b {
+    font-weight: 700;
+    color: var(--fg);
+}
+
+.content em,
+.content i {
+    font-style: italic;
+    color: var(--fg);
+}
+
+/* Nested content spacing */
+.content > *:first-child {
+    margin-top: 0;
+}
+
+.content > *:last-child {
+    margin-bottom: 0;
 }

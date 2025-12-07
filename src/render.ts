@@ -13,41 +13,28 @@ const md = new MiniGFM({
 // Parse Markdown
 const sampleMarkdown = `
 # Hello World
-
 Welcome to **MiniGFM** demo!
-
 ---
-
 ## Features Showcase
-
 ### 1. Lists
-
 - Unordered item 1
 - Unordered item 2  
   - Nested item A
   - Nested item B
-
 1. Ordered list item one
 2. Ordered list item two
     1. Nested ordered sub-item
-
 ### 2. Task List
-
 - [x] Completed task
 - [ ] Incomplete task
-
 ### 3. Table
-
 | Syntax   | Description        | Example     |
 |----------|-------------------|-------------|
 | Header 1 | Header 2          | Header 3    |
 | Cell 1   | _Italic_          | \`inline\`  |
 | Cell 2   | **Bold**          | [Link](#)   |
-
 ### 4. Code
-
 Inline code: \`console.log('Hello!');\`
-
 \`\`\`js
 // JavaScript example
 function greet(name) {
