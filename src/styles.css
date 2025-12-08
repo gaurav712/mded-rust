@@ -1,5 +1,3 @@
-@import 'highlight.js/styles/default.css';
-
 /* Gruvbox color variables - will be set by theme.ts */
 :root {
     --bg: #282828;
