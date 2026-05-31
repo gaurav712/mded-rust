@@ -1,3 +1,5 @@
+> **Note:** This project is moved to Codeberg: https://codeberg.org/gaurav712/mded-rust
+
 # Tauri + Vanilla TS
 
 This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
